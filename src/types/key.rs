@@ -1,11 +1,28 @@
 use thiserror::Error;
 
+/// A struct representing melodic key of the track
+#[derive(Copy, Clone, Debug)]
 pub struct Key {
+    /// num (1..=12) of the key
     num: i8,
+    /// letter (A or B) of the key
     letter: char,
 }
 
-#[derive(Error)]
+impl std::fmt::Display for Key {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let key_str: String = (*self).into();
+        write!(f, "{}", key_str)
+    }
+}
+
+impl From<Key> for String {
+    fn from(value: Key) -> Self {
+        format!("{}{}", value.num, value.letter)
+    }
+}
+
+#[derive(Error, Debug)]
 pub enum CreateKeyError {
     #[error("invalid letter given")]
     InvalidLetterError,
@@ -19,10 +36,13 @@ impl Key {
             return Err(CreateKeyError::InvalidNumberError);
         }
 
-        if !['A', 'B'].contains(letter) {
+        if !['A', 'B'].contains(&letter) {
             return Err(CreateKeyError::InvalidLetterError);
         }
 
         Ok(Self { num, letter })
+    }
+    pub fn new_force(num: i8, letter: char) -> Self {
+        Key::new(num, letter).unwrap()
     }
 }
