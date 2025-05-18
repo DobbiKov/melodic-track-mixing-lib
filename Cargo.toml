@@ -4,5 +4,10 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+bindgen = "0.71.1"
 loggit = "0.1.7"
+once_cell = "1.21.3"
 thiserror = "2.0.12"
+
+[build-dependencies]
+bindgen = "0.71.0"
