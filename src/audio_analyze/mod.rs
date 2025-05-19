@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::{ops::Deref, path::PathBuf};
 
 use symphonia::core::{
     audio::SampleBuffer, codecs::DecoderOptions, conv::IntoSample, formats::FormatOptions,
@@ -12,7 +12,30 @@ pub enum AnalyzeAudioError {
     EmptySampleBuffer,
 }
 
-pub fn analyze_audio_file(path: impl Into<PathBuf>) -> Result<(Vec<f64>), AnalyzeAudioError> {
+/// An audio data for key analyze
+pub struct AudioData {
+    samples: Vec<f64>,
+    channels: usize,
+    frame_rate: u64,
+}
+
+impl AudioData {
+    /// Create an instance of [AudioData] using (samples, channels, frame_rate)
+    pub fn new(samples: Vec<f64>, channels: usize, frame_rate: u64) -> Self {
+        Self {
+            samples,
+            channels,
+            frame_rate,
+        }
+    }
+
+    /// Returns a tuple of (samples, channels, frame_rate)
+    pub fn data(self) -> (Vec<f64>, usize, u64) {
+        (self.samples, self.channels, self.frame_rate)
+    }
+}
+
+pub fn analyze_audio_file(path: impl Into<PathBuf>) -> Result<AudioData, AnalyzeAudioError> {
     let path: PathBuf = path.into();
 
     // Create a media source. Note that the MediaSource trait is automatically implemented for File,
@@ -41,6 +64,9 @@ pub fn analyze_audio_file(path: impl Into<PathBuf>) -> Result<(Vec<f64>), Analyz
 
     // Get the default track.
     let track = format.default_track().unwrap();
+
+    let channels = track.codec_params.channels.unwrap().count();
+    let frame_rate = track.codec_params.sample_rate.unwrap();
 
     // Create a decoder for the track.
     let mut decoder = symphonia::default::get_codecs()
@@ -112,5 +138,5 @@ pub fn analyze_audio_file(path: impl Into<PathBuf>) -> Result<(Vec<f64>), Analyz
         .map(|e| e.into())
         .collect();
 
-    Ok(samples)
+    Ok(AudioData::new(samples, channels, frame_rate as u64))
 }
