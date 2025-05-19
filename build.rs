@@ -5,6 +5,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .header("./libkeyfinder/src/wrapper.h")
         .clang_arg("-xc++")
         .clang_arg("-std=c++17")
+        .clang_arg("-I/usr/local/include")
         .allowlist_function("KeyFinder.*")
         .allowlist_type("KeyFinder.*")
         .allowlist_var("KeyFinder.*")
@@ -46,6 +47,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
          #[derive(Debug)]\n\
          pub struct std_deque___map { _unused: [u8; 0] }\n",
     );
+
+    println!("cargo:rustc-link-search=native=/usr/local/lib"); // -L
+    println!("cargo:rustc-link-lib=dylib=keyfinder");
 
     // 5) Write the cleaned, stub-augmented bindings back out
     let out_path = std::path::PathBuf::from(std::env::var("OUT_DIR")?);
