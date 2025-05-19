@@ -56,6 +56,7 @@ pub fn analyze_key_from_file(path: impl Into<std::path::PathBuf>) -> kf::KeyFind
     let channels: c_uint = channels1 as c_uint;
     let samples: Vec<f64> = samples1;
     // ------------------------------------------------------------
+    loggit::debug!("channels: {}, frame_rate: {}", channels, frame_rate);
 
     let mut audio = build_audio_data(&samples, frame_rate, channels);
 
