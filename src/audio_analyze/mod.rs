@@ -1,50 +1,18 @@
-use std::{ffi::c_uint, mem::MaybeUninit, path::PathBuf};
+use std::path::PathBuf;
 
 use symphonia::core::{
-    audio::SampleBuffer, codecs::DecoderOptions, formats::FormatOptions, io::MediaSourceStream,
-    meta::MetadataOptions, probe::Hint,
+    audio::SampleBuffer, codecs::DecoderOptions, conv::IntoSample, formats::FormatOptions,
+    io::MediaSourceStream, meta::MetadataOptions, probe::Hint,
 };
+use thiserror::Error;
 
-/// All the raw C++ symbols live in the crate produced by `bindgen`.
-/// Here we assume you declared it as `bindings` in `build.rs`.
-use crate::bindings as kf;
-
-/// A lazily-constructed, process-wide `KeyFinder::KeyFinder` –
-/// equivalent to the C++ `static` in the original snippet.
-//fn keyfinder_instance() -> &'static mut kf::KeyFinder_KeyFinder {
-//    // `once_cell` lets us build the object exactly once, on first use.
-//
-//    unsafe {
-//        // C++ default-ctor: KeyFinder::KeyFinder()
-//        let mut tmp = MaybeUninit::<kf::KeyFinder_KeyFinder>::uninit();
-//        kf::KeyFinder_KeyFinder_KeyFinder(tmp.as_mut_ptr());
-//        tmp.assume_init()
-//    }
-//}
-
-/// Convenience wrapper that fills a `KeyFinder::AudioData` from an
-/// interleaved slice of `f64` samples (`channels` must match the slice).
-fn build_audio_data(
-    samples: &[f64],
-    frame_rate: c_uint,
-    channels: c_uint,
-) -> kf::KeyFinder_AudioData {
-    let mut audio = unsafe { kf::KeyFinder_AudioData::new() };
-
-    unsafe {
-        audio.setFrameRate(frame_rate);
-        audio.setChannels(channels);
-        audio.addToSampleCount(samples.len() as c_uint);
-
-        for (i, &s) in samples.iter().enumerate() {
-            audio.setSample(i as c_uint, s);
-        }
-    }
-
-    audio
+#[derive(thiserror::Error, Debug)]
+pub enum AnalyzeAudioError {
+    #[error("empty sample buffer")]
+    EmptySampleBuffer,
 }
 
-fn analyze_audio_file(path: impl Into<PathBuf>) {
+pub fn analyze_audio_file(path: impl Into<PathBuf>) -> Result<(Vec<f64>), AnalyzeAudioError> {
     let path: PathBuf = path.into();
 
     // Create a media source. Note that the MediaSource trait is automatically implemented for File,
@@ -83,11 +51,14 @@ fn analyze_audio_file(path: impl Into<PathBuf>) {
     let track_id = track.id;
 
     let mut sample_count = 0;
-    let mut sample_buf = None;
+    let mut sample_buf: Option<SampleBuffer<f32>> = None;
 
     loop {
         // Get the next packet from the format reader.
-        let packet = format.next_packet().unwrap();
+        let packet = match format.next_packet() {
+            Ok(p) => p,
+            Err(_) => break,
+        };
 
         // If the packet does not belong to the selected track, skip it.
         if packet.track_id() != track_id {
@@ -131,23 +102,15 @@ fn analyze_audio_file(path: impl Into<PathBuf>) {
             Err(_) => break,
         }
     }
-}
 
-fn main() {
-    // ------------------------------------------------------------
-    // ---  Replace this with real data from your audio pipeline  ---
-    let frame_rate: c_uint = 44_100;
-    let channels: c_uint = 1;
-    let samples:   Vec<f64> = /* grab audio samples here */ vec![0.0; 16_384];
-    // ------------------------------------------------------------
-    // TODO: make loading data from audio file
+    if sample_buf.is_none() {
+        return Err(AnalyzeAudioError::EmptySampleBuffer);
+    }
+    let sample_buf = sample_buf.unwrap();
+    let samples = Vec::from(sample_buf.samples())
+        .into_iter()
+        .map(|e| e.into())
+        .collect();
 
-    let mut audio = build_audio_data(&samples, frame_rate, channels);
-
-    let finder = unsafe { kf::KeyFinder_KeyFinder_new() };
-    // Call KeyFinder::keyOfAudio()
-    let key = unsafe { kf::KeyFinder_KeyFinder_keyOfAudio(finder, &audio) };
-
-    // Now do something useful with the detected key
-    println!("Detected key id: {}", key);
+    Ok(samples)
 }

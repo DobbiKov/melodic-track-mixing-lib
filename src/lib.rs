@@ -12,6 +12,7 @@ pub mod bindings {
 }
 //include!(concat!(env!("OUT_DIR"), "/bindings.rs"));
 
+pub mod audio_analyze;
 pub mod key_detect;
 pub mod types;
 //fn main() {}
