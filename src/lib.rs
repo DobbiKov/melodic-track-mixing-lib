@@ -10,9 +10,10 @@ pub mod bindings {
     // all the items produced by bindgen go **inside** this module
     include!(concat!(env!("OUT_DIR"), "/bindings.rs"));
 }
-//include!(concat!(env!("OUT_DIR"), "/bindings.rs"));
 
 pub mod audio_analyze;
 pub mod key_detect;
 pub mod types;
-//fn main() {}
+
+#[cfg(test)]
+pub mod tests;
