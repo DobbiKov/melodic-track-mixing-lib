@@ -2,7 +2,7 @@ use bindgen::builder;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let bindings = bindgen::builder()
-        .header("./libkeyfinder/src/wrapper.h")
+        .header("wrapper.h")
         .clang_arg("-xc++")
         .clang_arg("-std=c++17")
         .clang_arg("-I/usr/local/include")
