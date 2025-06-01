@@ -1,16 +1,10 @@
 use std::{ops::Deref, path::PathBuf};
 
+use crate::errors::AnalyzeAudioError;
 use symphonia::core::{
     audio::SampleBuffer, codecs::DecoderOptions, conv::IntoSample, formats::FormatOptions,
     io::MediaSourceStream, meta::MetadataOptions, probe::Hint,
 };
-use thiserror::Error;
-
-#[derive(thiserror::Error, Debug)]
-pub enum AnalyzeAudioError {
-    #[error("empty sample buffer")]
-    EmptySampleBuffer,
-}
 
 /// An audio data for key analyze
 pub struct AudioData {

@@ -1,4 +1,4 @@
-use thiserror::Error;
+use crate::errors::CreateKeyError;
 
 /// A struct representing melodic key of the track
 #[derive(Copy, Clone, Debug)]
@@ -20,14 +20,6 @@ impl From<Key> for String {
     fn from(value: Key) -> Self {
         format!("{}{}", value.num, value.letter)
     }
-}
-
-#[derive(Error, Debug)]
-pub enum CreateKeyError {
-    #[error("invalid letter given")]
-    InvalidLetterError,
-    #[error("invalid number given")]
-    InvalidNumberError,
 }
 
 impl Key {

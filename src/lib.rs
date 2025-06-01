@@ -12,6 +12,7 @@ pub mod bindings {
 }
 
 pub mod audio_analyze;
+pub mod errors;
 pub mod key_detect;
 pub mod types;
 
