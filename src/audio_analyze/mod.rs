@@ -1,5 +1,8 @@
 use std::{ops::Deref, path::PathBuf};
 
+use pitch_detection::detector::mcleod::McLeodDetector;
+use pitch_detection::detector::PitchDetector;
+
 use crate::errors::AnalyzeAudioError;
 use symphonia::core::{
     audio::SampleBuffer, codecs::DecoderOptions, conv::IntoSample, formats::FormatOptions,
@@ -115,7 +118,7 @@ pub fn analyze_audio_file(path: impl Into<PathBuf>) -> Result<AudioData, Analyze
 
                     // The samples may now be access via the `samples()` function.
                     sample_count += buf.samples().len();
-                    print!("\rDecoded {} samples", sample_count);
+                    //print!("\rDecoded {} samples", sample_count);
                 }
             }
             Err(symphonia::core::errors::Error::DecodeError(_)) => (),
