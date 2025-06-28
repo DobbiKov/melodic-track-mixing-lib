@@ -1,4 +1,4 @@
-use super::key::Key;
+use musickeyfinder::types::Key;
 
 /// A struct representing a track that is stored on the computer
 pub struct Track {

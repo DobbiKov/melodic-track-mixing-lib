@@ -5,12 +5,8 @@ edition = "2021"
 
 [dependencies]
 itertools = "0.14.0"
-loggit = "0.1.7"
-num-complex = "0.4.6"
+loggit = "0.1.9"
+musickeyfinder = { git = "https://github.com/DobbiKov/musickeyfinder", version = "0.1.0" }
 once_cell = "1.21.3"
-pitch-detection = "0.3.0"
-realfft = "3.5.0"
-rustfft = "6.4.0"
-symphonia = {version="0.5.4", features=["mpa", "all-codecs"]}
 thiserror = "2.0.12"
 
