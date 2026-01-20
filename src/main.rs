@@ -42,7 +42,7 @@ fn main() {
         Track::from_pair("I m For You   Magnetude.mp3", "9A"),
     ];
 
-    let sorted_tracks = melodic_sort(&tracks);
+    let sorted_tracks = melodic_sort(&tracks, 10000);
     for track in sorted_tracks {
         println!("{} - {}", track.name(), track.key().unwrap())
     }
