@@ -110,6 +110,7 @@ pub fn melodic_sort_with_weights(
             list
         })
         .collect();
+    current_layer = trim_top_lists(current_layer, &pair_weights, 100);
     let mut layer_idx = 0usize;
     info!(
         "melodic_sort: layer={} lists={}",
@@ -117,7 +118,8 @@ pub fn melodic_sort_with_weights(
         current_layer.len()
     );
 
-    let mut next_layer = extend_layer(layer_idx, &current_layer, &pairs_by_start);
+    let mut next_layer =
+        extend_layer(layer_idx, &current_layer, &pairs_by_start, &pair_weights, 100);
     while !next_layer.is_empty() {
         info!(
             "melodic_sort: expanded layer {} lists={} -> {}",
@@ -127,7 +129,8 @@ pub fn melodic_sort_with_weights(
         );
         current_layer = next_layer;
         layer_idx += 1;
-        next_layer = extend_layer(layer_idx, &current_layer, &pairs_by_start);
+        next_layer =
+            extend_layer(layer_idx, &current_layer, &pairs_by_start, &pair_weights, 100);
     }
     info!(
         "melodic_sort: finished at layer={}, total_lists={}",
@@ -167,6 +170,8 @@ fn extend_layer(
     layer_idx: usize,
     layer: &[LinkedList<usize>],
     pairs_by_start: &HashMap<usize, Vec<Pair>>,
+    pair_weights: &HashMap<(usize, usize), i32>,
+    limit: usize,
 ) -> Vec<LinkedList<usize>> {
     let mut next_layer = Vec::new();
     let mut seen = HashSet::new();
@@ -199,13 +204,16 @@ fn extend_layer(
             }
         }
     }
+    let untrimmed_len = next_layer.len();
+    let trimmed = trim_top_lists(next_layer, pair_weights, limit);
     debug!(
-        "extend_layer: layer={}, output_lists={}",
+        "extend_layer: layer={}, output_lists={} trimmed_lists={}",
         layer_idx,
-        next_layer.len()
+        untrimmed_len,
+        trimmed.len()
     );
 
-    next_layer
+    trimmed
 }
 
 fn list_contains(list: &LinkedList<usize>, target: usize) -> bool {
@@ -227,6 +235,25 @@ fn list_score(list: &LinkedList<usize>, weights: &HashMap<(usize, usize), i32>) 
     }
 
     total
+}
+
+fn trim_top_lists(
+    lists: Vec<LinkedList<usize>>,
+    weights: &HashMap<(usize, usize), i32>,
+    limit: usize,
+) -> Vec<LinkedList<usize>> {
+    if lists.len() <= limit {
+        return lists;
+    }
+
+    let mut scored: Vec<(i32, LinkedList<usize>)> = lists
+        .into_iter()
+        .map(|list| (list_score(&list, weights), list))
+        .collect();
+    scored.sort_by(|a, b| b.0.cmp(&a.0));
+    scored.truncate(limit);
+
+    scored.into_iter().map(|(_, list)| list).collect()
 }
 
 fn build_pairs(tracks: &[Track], weights: &MovementWeights) -> Vec<Pair> {
