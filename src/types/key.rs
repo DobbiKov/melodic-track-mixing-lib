@@ -92,3 +92,23 @@ impl fmt::Display for KeyError {
 }
 
 impl std::error::Error for KeyError {}
+
+impl TryFrom<stratum_dsp::Key> for Key {
+    type Error = KeyError;
+
+    fn try_from(value: stratum_dsp::Key) -> Result<Self, Self::Error> {
+        let (number, letter) = match value {
+            stratum_dsp::Key::Major(pitch_class) => {
+                const MAJOR_NUMBERS: [u8; 12] = [8, 3, 10, 5, 12, 7, 2, 9, 4, 11, 6, 1];
+                let idx = (pitch_class % 12) as usize;
+                (MAJOR_NUMBERS[idx], KeyLetter::B)
+            }
+            stratum_dsp::Key::Minor(pitch_class) => {
+                const MINOR_NUMBERS: [u8; 12] = [5, 12, 7, 2, 9, 4, 11, 6, 1, 8, 3, 10];
+                let idx = (pitch_class % 12) as usize;
+                (MINOR_NUMBERS[idx], KeyLetter::A)
+            }
+        };
+        Key::new(number, letter)
+    }
+}
