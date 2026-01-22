@@ -1,6 +1,6 @@
 use std::error::Error;
 use std::path::Path;
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use rusqlite::{params, Connection, OptionalExtension};
 
@@ -19,6 +19,9 @@ pub struct KeyCache {
 impl KeyCache {
     pub fn open(path: &Path) -> Result<Self, Box<dyn Error>> {
         let conn = Connection::open(path)?;
+        conn.pragma_update(None, "journal_mode", "WAL")?;
+        conn.pragma_update(None, "synchronous", "NORMAL")?;
+        conn.busy_timeout(Duration::from_secs(5))?;
         conn.execute_batch(
             "CREATE TABLE IF NOT EXISTS track_keys (
                 path TEXT PRIMARY KEY,
