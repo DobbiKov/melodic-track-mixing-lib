@@ -1,0 +1,7 @@
+[package]
+name = "sortlib"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+loggit = "0.1.9"

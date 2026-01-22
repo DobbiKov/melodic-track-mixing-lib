@@ -1,0 +1,11 @@
+[package]
+name = "melodic-pipeline"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+loggit = "0.1.9"
+rusqlite = { version = "0.31.0", features = ["bundled"] }
+sortlib = { path = "../sortlib" }
+stratum-dsp = "1.0.0"
+symphonia = "0.5.4"
