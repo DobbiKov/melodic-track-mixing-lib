@@ -93,6 +93,56 @@ pub fn melodic_sort_with_weights(
     weights: &MovementWeights,
     limit: usize,
 ) -> LinkedList<Track> {
+    use hamiltonian_best_path::graph::Graph;
+
+    info!("melodic_sort: tracks={}", tracks.len());
+    let pairs = build_pairs(tracks, weights);
+    info!("melodic_sort: pairs={}", pairs.len());
+
+    if pairs.is_empty() {
+        return LinkedList::new();
+    }
+
+    // Collect all node IDs that appear in at least one pair
+    let mut node_set: HashSet<usize> = HashSet::new();
+    for pair in &pairs {
+        node_set.insert(pair.start);
+        node_set.insert(pair.end);
+    }
+    let nodes: Vec<usize> = node_set.into_iter().collect();
+
+    // Build edges as (start_id, end_id, weight)
+    let edges: Vec<(usize, usize, f32)> = pairs
+        .iter()
+        .map(|p| (p.start, p.end, p.weight as f32))
+        .collect();
+
+    let graph = match Graph::new(&nodes, &edges) {
+        Ok(g) => g,
+        Err(_) => return LinkedList::new(),
+    };
+
+    let path = graph.build_approx_best_path();
+    info!("melodic_sort: path_len={}", path.len());
+
+    let mut result = LinkedList::new();
+    for node in path {
+        let real_id = graph.get_real_id(node.get_id());
+        result.push_back(tracks[real_id].clone());
+    }
+
+    result
+}
+
+pub fn melodic_sort_legacy(tracks: &[Track], limit: usize) -> LinkedList<Track> {
+    melodic_sort_with_weights_legacy(tracks, &MovementWeights::default(), limit)
+}
+
+pub fn melodic_sort_with_weights_legacy(
+    tracks: &[Track],
+    weights: &MovementWeights,
+    limit: usize,
+) -> LinkedList<Track> {
     info!("melodic_sort: tracks={}", tracks.len());
     let pairs = build_pairs(tracks, weights);
     info!("melodic_sort: pairs={}", pairs.len());
@@ -189,7 +239,9 @@ fn extend_layer(
     for scored in layer {
         let list = &scored.list;
         let Some(&end) = list.back() else { continue };
-        let Some(pairs) = pairs_by_start.get(&end) else { continue };
+        let Some(pairs) = pairs_by_start.get(&end) else {
+            continue;
+        };
 
         for pair in pairs {
             if list_contains(list, pair.end) {
@@ -244,19 +296,16 @@ fn build_pairs(tracks: &[Track], weights: &MovementWeights) -> Vec<Pair> {
     let mut pairs = Vec::new();
 
     for (i, start) in tracks.iter().enumerate() {
-        let Some(start_key) = start.key() else { continue };
+        let Some(start_key) = start.key() else {
+            continue;
+        };
         for (j, end) in tracks.iter().enumerate() {
             if i == j {
                 continue;
             }
             let Some(end_key) = end.key() else { continue };
             if let Some(movement) = movement_between(start_key, end_key) {
-                trace!(
-                    "build_pairs: {} -> {} movement={:?}",
-                    i,
-                    j,
-                    movement
-                );
+                trace!("build_pairs: {} -> {} movement={:?}", i, j, movement);
                 pairs.push(Pair {
                     start: i,
                     end: j,
